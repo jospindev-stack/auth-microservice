@@ -1,0 +1,20 @@
+## .NET
+bin/
+obj/
+*.user
+*.suo
+.vs/
+*.log
+*.swp
+
+## Environment
+.env
+*.env.local
+
+## Published output
+publish/
+AuthMicroservice/Migrations/
+
+## Logs
+logs/
+*.log
