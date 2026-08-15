@@ -1,7 +1,8 @@
 # Auth Microservice
 
-> A modern authentication microservice built with **ASP.NET Core 8**, featuring JWT authentication, refresh token rotation, Google OAuth2, PostgreSQL, Docker, and production-oriented security practices.
+> A modern authentication microservice built with **ASP.NET Core 8**, featuring JWT authentication, refresh token rotation, Google OAuth2, PostgreSQL, Docker, automated tests, and CI validation.
 
+![CI](https://github.com/jospindev-stack/auth-microservice/actions/workflows/ci.yml/badge.svg)
 ![.NET](https://img.shields.io/badge/.NET-8.0-512BD4?logo=dotnet)
 ![ASP.NET Core](https://img.shields.io/badge/ASP.NET%20Core-8.0-512BD4?logo=dotnet)
 ![Entity Framework Core](https://img.shields.io/badge/EF%20Core-8.0-68217A)
@@ -28,6 +29,8 @@ It includes:
 - Structured Logging (Serilog)
 - Health Checks
 - Automatic EF Core Migrations
+- Automated xUnit Tests
+- GitHub Actions CI
 
 ---
 
@@ -44,6 +47,8 @@ It includes:
 | Logging          | Serilog                 |
 | Documentation    | Swagger / OpenAPI       |
 | Containerization | Docker & Docker Compose |
+| Testing          | xUnit + SQLite In-Memory |
+| CI               | GitHub Actions          |
 
 ---
 
@@ -63,53 +68,60 @@ It includes:
 | Structured Logs       | Console + daily rolling log files                      |
 | Health Checks         | Database connectivity verification                     |
 | Automatic Migration   | EF Core migrations executed on startup                 |
+| Automated Tests       | Authentication and refresh-token scenarios with xUnit |
+| Continuous Integration | Restore, build and test on GitHub Actions             |
 
 ---
 
 # Project Structure
 
-```
+```text
 auth-microservice/
-│
-├── Dockerfile
-├── docker-compose.yml
-├── .dockerignore
-├── .env.example
-├── README.md
-├── AuthMicroservice.sln
-│
-└── AuthMicroservice/
-    ├── Controllers/
-    ├── Data/
-    ├── DTOs/
-    ├── Entities/
-    ├── Extensions/
-    ├── Migrations/
-    ├── Services/
-    │   ├── Interfaces/
-    │   ├── AuthService.cs
-    │   └── TokenService.cs
-    ├── Program.cs
-    └── appsettings.json
+|
+|-- .github/
+|   `-- workflows/
+|       `-- ci.yml
+|-- AuthMicroservice/
+|   |-- Controllers/
+|   |-- Data/
+|   |-- DTOs/
+|   |-- Entities/
+|   |-- Extensions/
+|   |-- Migrations/
+|   |-- Services/
+|   |   |-- Interfaces/
+|   |   |-- AuthService.cs
+|   |   `-- TokenService.cs
+|   |-- Program.cs
+|   `-- appsettings.json
+|-- AuthMicroservice.Tests/
+|   |-- AuthMicroservice.Tests.csproj
+|   `-- AuthServiceTests.cs
+|-- AuthMicroservice.sln
+|-- Dockerfile
+|-- docker-compose.yml
+|-- .dockerignore
+|-- .env.example
+`-- README.md
 ```
 
 ---
 
 # Architecture
 
-```
+```text
 Client
-   │
-   ▼
+   |
+   v
 Controllers
-   │
-   ▼
+   |
+   v
 Services
-   │
-   ▼
+   |
+   v
 Entity Framework Core
-   │
-   ▼
+   |
+   v
 PostgreSQL
 ```
 
@@ -153,11 +165,8 @@ Update your `.env` file:
 
 ```env
 POSTGRES_PASSWORD=your_password
-
 JWT_SECRET=your_random_secret_key
-
 GOOGLE_CLIENT_ID=your_google_client_id
-
 GOOGLE_CLIENT_SECRET=your_google_client_secret
 ```
 
@@ -169,13 +178,13 @@ docker compose up -d --build
 
 Application:
 
-```
+```text
 http://localhost:8080
 ```
 
 Swagger UI:
 
-```
+```text
 http://localhost:8080/swagger
 ```
 
@@ -193,11 +202,8 @@ Configure secrets:
 
 ```bash
 dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Host=localhost;Database=authdb;Username=postgres;Password=postgres"
-
 dotnet user-secrets set "JwtSettings:SecretKey" "your-secret-key"
-
 dotnet user-secrets set "Authentication:Google:ClientId" "your_client_id"
-
 dotnet user-secrets set "Authentication:Google:ClientSecret" "your_client_secret"
 ```
 
@@ -209,9 +215,49 @@ dotnet run
 
 Swagger:
 
-```
+```text
 http://localhost:5000/swagger
 ```
+
+---
+
+# Running Tests
+
+Run the full test suite from the repository root:
+
+```bash
+dotnet test AuthMicroservice.sln
+```
+
+The authentication tests use SQLite in-memory to preserve relational database behavior while keeping the test suite isolated and fast.
+
+Current coverage includes:
+
+- successful registration
+- password confirmation validation
+- duplicate email detection
+- successful login
+- invalid credentials
+- disabled accounts
+- refresh token rotation
+- refresh token reuse detection
+- refresh token revocation
+
+---
+
+# Continuous Integration
+
+The GitHub Actions workflow runs automatically on pushes to `main`, pushes to `test/**` branches, and pull requests targeting `main`.
+
+The pipeline performs:
+
+```text
+restore
+  -> build (Release)
+  -> test
+```
+
+Changes are expected to compile and pass the automated test suite before being merged.
 
 ---
 
@@ -227,16 +273,12 @@ http://localhost:5000/swagger
 | POST   | `/api/auth/logout`   | Yes            |
 | GET    | `/api/auth/me`       | Yes            |
 
----
-
 ## OAuth
 
 | Method | Endpoint                     |
 | ------ | ---------------------------- |
 | GET    | `/api/oauth/google`          |
 | GET    | `/api/oauth/google/callback` |
-
----
 
 ## Health
 
@@ -313,14 +355,14 @@ Authentication endpoints are protected against brute-force attacks using a confi
 
 | Variable                                | Description                  |
 | --------------------------------------- | ---------------------------- |
-| ConnectionStrings\_\_DefaultConnection  | PostgreSQL connection string |
-| JwtSettings\_\_SecretKey                | JWT signing key              |
-| JwtSettings\_\_Issuer                   | JWT issuer                   |
-| JwtSettings\_\_Audience                 | JWT audience                 |
-| JwtSettings\_\_AccessTokenExpiryMinutes | Access token lifetime        |
-| JwtSettings\_\_RefreshTokenExpiryDays   | Refresh token lifetime       |
-| Authentication**Google**ClientId        | Google Client ID             |
-| Authentication**Google**ClientSecret    | Google Client Secret         |
+| ConnectionStrings__DefaultConnection    | PostgreSQL connection string |
+| JwtSettings__SecretKey                  | JWT signing key              |
+| JwtSettings__Issuer                     | JWT issuer                   |
+| JwtSettings__Audience                   | JWT audience                 |
+| JwtSettings__AccessTokenExpiryMinutes   | Access token lifetime        |
+| JwtSettings__RefreshTokenExpiryDays     | Refresh token lifetime       |
+| Authentication__Google__ClientId        | Google Client ID             |
+| Authentication__Google__ClientSecret    | Google Client Secret         |
 | FrontendUrl                             | Frontend callback URL        |
 
 ---
@@ -332,7 +374,7 @@ Authentication endpoints are protected against brute-force attacks using a confi
 3. Select **Web Application**.
 4. Add:
 
-```
+```text
 http://localhost:8080/api/oauth/google/callback
 ```
 
@@ -342,17 +384,11 @@ http://localhost:8080/api/oauth/google/callback
 
 # Deployment
 
-The application can be deployed to:
-
-- Railway
-- Render
-- Azure App Service
-- Docker
-- Kubernetes
+The application can be deployed to platforms that support .NET or Docker containers, including Azure App Service and container-based hosting platforms.
 
 Health endpoint:
 
-```
+```text
 GET /health
 ```
 
@@ -364,20 +400,17 @@ Future improvements:
 
 - Email verification
 - Password reset
-- Multi-factor Authentication (MFA)
+- Multi-factor authentication (MFA)
 - Redis distributed cache
 - Redis refresh token storage
-- Unit tests
-- Integration tests
-- GitHub Actions CI/CD pipeline
+- API-level integration tests
+- Deployment automation
 
 ---
 
 # License
 
 This project is licensed under the **MIT License**.
-
-Feel free to use, modify and distribute it.
 
 ---
 
