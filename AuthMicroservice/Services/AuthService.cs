@@ -65,7 +65,7 @@ public class AuthService(
 
         var refreshToken = tokenService.GenerateRefreshToken(ipAddress);
         refreshToken.UserId = user.Id;
-        user.RefreshTokens.Add(refreshToken);
+        db.RefreshTokens.Add(refreshToken);
         await db.SaveChangesAsync();
 
         logger.LogInformation("User {UserId} logged in from {Ip}", user.Id, ipAddress);
@@ -99,7 +99,7 @@ public class AuthService(
         existing.RevokedByIp = ipAddress;
         existing.ReplacedByToken = newToken.Token;
 
-        existing.User.RefreshTokens.Add(newToken);
+        db.RefreshTokens.Add(newToken);
         await db.SaveChangesAsync();
 
         logger.LogInformation("Refresh token rotated for user {UserId}", existing.UserId);
@@ -168,7 +168,7 @@ public class AuthService(
 
         var refreshToken = tokenService.GenerateRefreshToken(ipAddress);
         refreshToken.UserId = user.Id;
-        user.RefreshTokens.Add(refreshToken);
+        db.RefreshTokens.Add(refreshToken);
         await db.SaveChangesAsync();
 
         logger.LogInformation("User {UserId} authenticated via Google", user.Id);
