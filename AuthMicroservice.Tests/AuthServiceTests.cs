@@ -5,6 +5,7 @@ using AuthMicroservice.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
+using Xunit;
 
 namespace AuthMicroservice.Tests;
 
